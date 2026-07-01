@@ -1,0 +1,189 @@
+skill(commit_log): 生成标准化提交日志
+
+**Why:**
+规范化的提交日志让项目历史可读、可追溯、可自动化。一致的格式支持 changelog 自动生成、版本号语义推断、回归定位和跨团队协作。未经规范的提交信息（如 "fix bug"、"update"、"aaa"）在三个月后就是噪音。
+
+**Scope:**
+适用于 Git 和 SVN 仓库。Git 工作流基于 `git status`/`git diff`，SVN 工作流基于 `svn status`/`svn diff`。非版本控制目录返回错误提示。
+
+**依据：** [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)。
+
+---
+
+## Trigger conditions（满足任一即激活）
+
+1. 用户说「生成提交日志/commit log/commit message」或等价表述。
+2. 用户执行提交前（`git commit` 前置 hook 场景）。
+3. 用户要求格式化或重写已有提交信息。
+4. 用户要求生成 changelog 或发布说明。
+
+---
+
+## How to apply
+
+### 1. 检测版本控制系统
+
+执行 `git rev-parse --git-dir` 判断：
+- **Git 仓库** → Git 工作流
+- **SVN 仓库** → SVN 工作流
+- **均不匹配** → 返回错误提示，不做猜测
+
+### 2. Git 工作流
+
+```
+1. git status         → 获取变更文件列表及状态
+2. git diff --staged  → 分析已暂存变更内容（优先）
+3. git diff           → 如有未暂存变更，分析全部变更
+4. git log --oneline -5  → 参考最近提交保持风格一致
+5. 综合结果生成日志
+```
+
+### 3. SVN 工作流
+
+```
+1. svn status         → 获取变更文件列表
+2. svn diff           → 分析变更内容
+3. svn log --limit 5  → 参考最近提交保持风格一致
+4. 综合结果生成日志
+```
+
+---
+
+## 日志格式规范
+
+### 标准结构
+
+```
+<类型>(<作用域>): <简短描述>
+
+<详细描述>
+
+<关联信息>
+```
+
+**各部分说明：**
+
+| 部分 | 必需 | 内容 | 约束 |
+|------|------|------|------|
+| 类型 | 是 | 类型字典之一 | 小写英文 |
+| 作用域 | 否 | 受影响的模块/包名 | 小写英文，可选 |
+| 简短描述 | 是 | 动词原形开头，总结变更 | ≤50 字符，无句号 |
+| 详细描述 | 否 | 说明 Why + How | 每行 ≤80 字符 |
+| 关联信息 | 否 | 工单/Bug 编号或破坏性说明 | — |
+
+### 简短描述（Subject）规范
+
+```
+# ✅ 好的描述
+feat(auth): add OAuth2 login flow
+fix(parser): handle empty input edge case
+docs: update API reference links
+
+# ❌ 坏的描述
+feat: Added OAuth2 login flow      # 动词非原形
+fix: parsing error                  # 太模糊
+update                              # 无类型无范围
+```
+
+### 详细描述（Body）规范
+
+- **必须说明「为什么做」和「如何做」**，而非「做了什么」。
+- 空一行与 Subject 分隔。
+- 手动换行，每行 ≤80 字符。
+- 极简变更（一行改动、typo 修复）可省略。
+
+```
+feat(cart): add bulk discount calculation
+
+现有满减逻辑只支持单商品优惠。促销系统 v2 要求
+跨品类凑单折扣，因此重构折扣引擎以支持规则链。
+
+关联规则表按优先级排序，每个规则独立匹配/叠加。
+```
+
+### 关联信息（Footer）规范
+
+- 空一行与 Body 分隔。
+- `关联：<编号>`、`Closes: <编号>`、`Refs: <编号>`。
+- 破坏性变更用 `BREAKING CHANGE:` 标记。
+
+```
+BREAKING CHANGE: remove v1 /checkout API endpoint
+
+Closes: JIRA-4321
+```
+
+---
+
+## 类型字典
+
+| 类型 | 含义 | 当用时 | 不当用时 |
+|------|------|--------|----------|
+| `feat` | 新增功能 | 新特性、新接口 | 重构已有功能的内部实现 |
+| `fix` | 修复缺陷 | Bug 修复、边界条件修正 | 代码格式化、日志调整 |
+| `docs` | 文档变更 | README、注释、API 文档 | 代码逻辑改动 |
+| `style` | 代码格式 | 缩进、分号、空格调整 | 语义变更 |
+| `refactor` | 代码重构 | 重命名、提取函数、优化结构 | 功能新增 + 重构混用（应拆分） |
+| `perf` | 性能优化 | 缓存、算法替换、延迟加载 | 附带功能新增（应拆分） |
+| `test` | 测试变更 | 新增/修改测试用例 | 生产代码逻辑改动 |
+| `chore` | 杂项 | 构建脚本、依赖更新、CI 配置 | 任何代码逻辑变更 |
+
+**类型选用原则：** 一个 commit 只有一个类型。如果变更涉及多个类型，应拆分为多个 commit。
+
+**breaking change 标记：** 任何类型后加 `!` 表示破坏性变更：`feat!: remove deprecated v1 API`。
+
+---
+
+## 快速参考
+
+| 场景 | Subject 示例 |
+|------|-------------|
+| 新功能 | `feat(user): add phone number verification` |
+| 修 Bug | `fix(api): return 400 on invalid email format` |
+| 文档 | `docs: fix typo in setup guide` |
+| 重构 | `refactor(db): extract query builder from repository` |
+| 性能 | `perf: lazy load user avatar images` |
+| 测试 | `test: add unit tests for rate limiter` |
+| 杂项 | `chore: upgrade Go to 1.22` |
+| 破坏性变更 | `feat!: change auth token format to JWT` |
+| 无代码（纯新文件） | `feat: add .editorconfig` |
+| 多个独立变更 | 拆分为多个 commit，不要写混合 commit |
+
+---
+
+## 常见错误
+
+| 错误 | 表现 | 修正 |
+|------|------|------|
+| 模糊类型 | `update`、`fix` | 使用类型字典中的标准类型 |
+| 动词非原形 | `Added`、`Fixing` | 统一用动词原形：`add`、`fix` |
+| 混合类型 | `feat: add login and fix logout bug` | 拆为两个 commit |
+| 无 Why | `fix(api): change timeout` | 补充原因：`fix(api): reduce timeout to 5s to avoid upstream gateway timeout` |
+| Body 无换行 | 单行长文本 | 每行 ≤80 字符手动换行 |
+| 超级长 Subject | 超 50 字符 | 压缩或移入 Body |
+| 开场白 | 先解释再输出内容 | 直出日志内容，不加「以下是提交日志」 |
+| 追加命令 | 末尾加 `git commit -m "xxx"` | 只输出日志文本，不输出执行建议 |
+
+---
+
+## Verification（自我检查清单）
+
+- [ ] 类型在字典中（feat/fix/docs/style/refactor/perf/test/chore）
+- [ ] Subject ≤50 字符，动词原形开头，无句号
+- [ ] Body（如有）每行 ≤80 字符，说明 Why + How
+- [ ] Footer（如有）前有空行，编号正确
+- [ ] breaking change 有 `BREAKING CHANGE:` 或 `!` 标记
+- [ ] 无开场白/结束语/命令建议
+- [ ] 单类型单变更（不混合）
+- [ ] Subject 与改动范围一致
+
+---
+
+## 输出规则
+
+1. **只输出日志文本**，不输出前后说明、命令、提示。
+2. 首行：`类型(作用域): 动词原形开头的简短描述`（无句号）。
+3. 各段之间空行分隔。
+4. 详细描述手动换行（每行 ≤80 字符）。
+5. 破坏性变更必须标注 `BREAKING CHANGE:` 或 `!`。
+6. **禁止**输出执行命令（`git commit -m "..."`）、开场白、结束语。
