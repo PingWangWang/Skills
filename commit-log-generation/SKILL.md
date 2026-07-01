@@ -132,7 +132,7 @@ Closes: JIRA-4321
 **失败时**：输出一行错误原因（见上表）。
 
 **禁止输出**：
-- × `git commit -m "..."` 命令
+- × `git commit`、`svn commit` 等提交命令
 - × 「以下是提交日志」等开场白
 - × 「建议执行...」等后续建议
 - × 任何形式的提交操作执行
@@ -141,8 +141,9 @@ Closes: JIRA-4321
 
 ## 禁止行为
 
-- × 执行 `git commit` 或任何提交操作
-- × 写入 `.git/COMMIT_EDITMSG`
+- × 执行任何提交操作：`git commit`、`svn commit`、`svn ci`，或任何 VCS 的提交/推送命令
+- × 写入任何 VCS 的提交模板文件：`.git/COMMIT_EDITMSG`、`svn-commit.tmp` 等
 - × 输出英文 Subject 或 Body（类型和作用域除外）
 - × 输出开场白 / 结束语 / 命令建议
 - × 在非仓库目录下猜测变更
+- × 修改任何 VCS 配置文件（`.git/config`、SVN properties 等）
