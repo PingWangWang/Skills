@@ -1,185 +1,143 @@
 ---
 name: file-encoding-standardization
-description: 统一代码文件编码与换行符规范 — UTF-8 with BOM + LF，确保跨平台兼容和 MSVC 编码识别
+description: 批量统一源码文件编码为 UTF-8 with BOM + LF 换行符。适用：MSVC 编译乱码、跨平台协作换行符混乱、用户明确要求标准化编码。不适用：二进制文件、第三方库目录、非 C/C++ 项目（BOM 可选）、仅检查不修复的场景
 ---
 
 # 统一代码文件编码与换行符规范
 
-**Why:**
-确保所有源码文件使用 **UTF-8 with BOM** 编码和 **LF** 换行符，解决以下问题：
+## 依赖要求
 
-1. **跨平台兼容性**：Windows/Linux/macOS 换行符处理不同，LF 确保一致性。
-2. **MSVC 编码识别**：无 BOM 的 UTF-8 文件可能被 MSVC 误解析为本地编码（如 GBK），导致中文注释乱码或编译错误。BOM 强制指定编码。
-3. **Git 差异洁净**：混合换行符导致 diff 出现无意义变更，增加审查负担。
+| 平台 | 依赖 | 检查命令 |
+|------|------|---------|
+| Windows | PowerShell 5.0+（系统自带） | `powershell -Command "echo ok"` |
+| Linux/macOS | Python 3.6+（系统自带） | `python3 --version` |
+| 通用（检测用） | `file` 命令 或 `xxd` | `file --version` |
+| Git Hook | Bash（Git 自带） | 无需额外安装 |
 
-**Scope:**
+**前置条件**：当前目录是项目根目录，排除目录已确认（`build/`、`vendor/`、`node_modules/`、`.git/`）。
 
-- **适用文件**：`.cpp`, `.h`, `.hpp`, `.c`, `.cc`, `.cxx`, `.hh`, `.hxx` 等源码文件。
-- **扩展适用**：`.py`, `.js`, `.ts`, `.java`, `.rs`, `.go` 等文本文件（编码统一为 UTF-8，换行符为 LF；BOM 仅 C/C++ 场景必需）。
-- **排除文件**：二进制文件（图片、音频）、第三方库文件、`build/` / `vendor/` / `node_modules/` 下自动生成的文件。
-
----
-
-## Trigger conditions（满足任一即触发）
-
-1. **文件保存时**：编辑器保存源码文件后自动检测编码与换行符。
-2. **批量转换命令**：用户要求标准化编码或换行符。
-3. **跨平台协作**：接收来自不同平台的代码（PR 检出、项目clone）。
-4. **构建失败**：MSVC 编译因编码问题报错（中文注释乱码等）。
+**适用文件扩展名**：
+- C/C++ 必检：`.cpp`, `.h`, `.hpp`, `.c`, `.cc`, `.cxx`, `.hh`, `.hxx`
+- 扩展适用：`.py`, `.js`, `.ts`, `.java`, `.rs`, `.go`（UTF-8 但不强制 BOM）
 
 ---
 
-## How to apply
+## 执行步骤
 
-### 1. 检查文件合规性
+### 步骤 1：确认平台和模式
+
+询问用户：
+- **检测模式**：只报告不合规文件，不修改
+- **修复模式**：转换不合规文件
+
+默认先检测，让用户确认后再修复。
+
+### 步骤 2：扫描目标文件
+
+```bash
+# 扫描所有目标文件（排除 build/vendor/node_modules/.git）
+find . -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.hpp" -o -name "*.c" \) \
+  ! -path "*/build/*" ! -path "*/vendor/*" ! -path "*/node_modules/*" ! -path "*/.git/*"
+```
+
+### 步骤 3：逐文件检测
+
+对每个文件检查三项：
+
+| 检查项 | 方法 | 合规标准 |
+|--------|------|---------|
+| BOM | 读前 3 字节 | `EF BB BF` |
+| 换行符 | 检查 `0D 0A` | 只有 `0A`（LF），无 `0D 0A` |
+| 编码 | 尝试 UTF-8 解码 | 无解码错误 |
+
+记录不合规文件列表：路径 + BOM 状态 + CRLF 状态。
+
+### 步骤 4：检测模式 → 输出报告
 
 ```
-BOM 检测：    文件前 3 字节是否为 EF BB BF
-换行符检测：  是否含 0D 0A（CRLF），理想状态仅 0A（LF）
-编码检测：    能否以 UTF-8 解码，无解码错误
+不合规文件列表：
+- src/main.cpp (BOM=否, CRLF=是)
+- src/utils.h (BOM=否, CRLF=否)
+- src/parser.cc (BOM=是, CRLF=是)
+
+共 N 个文件不合规。执行修复？
 ```
 
-### 2. 自动转换流程
+### 步骤 5：修复模式 → 转换文件
 
-```
-读取文件 → 检测编码 → 检测换行符 → 转换 → 验证 → 输出结果
-```
-
-### 3. 跨平台转换命令
-
-**Windows (PowerShell)：**
-
+**Windows (PowerShell)**：
 ```powershell
-# 批量转换 .cpp/.h 文件为 UTF-8 with BOM + LF
 Get-ChildItem -Recurse -Include *.cpp, *.h | ForEach-Object {
     $content = Get-Content -Raw -Path $_.FullName
-    # 移除 BOM（如有）再写入带 BOM + LF 的 UTF-8
     $utf8Bom = New-Object System.Text.UTF8Encoding $true
     [System.IO.File]::WriteAllText($_.FullName, $content, $utf8Bom)
     Write-Host "已修复: $($_.FullName)"
 }
 ```
 
-```powershell
-# 仅检测不合规文件（不修改）
-Get-ChildItem -Recurse -Include *.cpp, *.h | ForEach-Object {
-    $bytes = [System.IO.File]::ReadAllBytes($_.FullName)
-    $hasBom = $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
-    $hasCrlf = [System.Text.Encoding]::UTF8.GetString($bytes) -match "`r`n"
-    if (-not $hasBom -or $hasCrlf) {
-        Write-Host "不合规: $($_.FullName) (BOM=$hasBom, CRLF=$hasCrlf)"
-    }
-}
-```
-
-**Linux/macOS (Python)：**
-
+**Linux/macOS (Python)**：
 ```python
-# batch_convert_encoding.py
-import os, sys
+import os
 
 def convert_file(path):
     with open(path, 'rb') as f:
         raw = f.read()
-    
-    # 解码，去除 BOM
     if raw[:3] == b'\xef\xbb\xbf':
         content = raw[3:].decode('utf-8')
     else:
         content = raw.decode('utf-8')
-    
-    # 转换换行符
     content = content.replace('\r\n', '\n').replace('\r', '\n')
-    
-    # 写出 UTF-8 with BOM + LF
     with open(path, 'wb') as f:
         f.write(b'\xef\xbb\xbf' + content.encode('utf-8'))
-    
-    return True
-
-# 批量处理
-target_exts = ('.cpp', '.h', '.hpp', '.c', '.cc', '.cxx')
-for root, dirs, files in os.walk('.'):
-    dirs[:] = [d for d in dirs if d not in ('build', 'vendor', 'node_modules', '.git')]
-    for f in files:
-        if f.endswith(target_exts):
-            convert_file(os.path.join(root, f))
 ```
 
-**Git 预提交 Hook（.git/hooks/pre-commit）：**
+### 步骤 6：验证转换结果
 
-```bash
-#!/bin/sh
-# 检查即将提交的文件是否为 UTF-8 with BOM + LF
-for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|h|hpp|c|cc)$'); do
-    if [ -f "$file" ]; then
-        # 检查 BOM
-        if [ "$(head -c 3 "$file")" != "$(printf '\xef\xbb\xbf')" ]; then
-            echo "错误: $file 缺少 UTF-8 BOM"
-            exit 1
-        fi
-        # 检查 CRLF
-        if grep -rl $'\r' "$file" > /dev/null 2>&1; then
-            echo "错误: $file 含有 CRLF 换行符"
-            exit 1
-        fi
-    fi
-done
+对每个转换后的文件：读头 3 字节确认为 `EF BB BF`，搜索 `\r\n` 确认为 0 结果。
+
+---
+
+## 失败处理
+
+| 失败场景 | 表现 | 处理 |
+|---------|------|------|
+| 二进制文件误入 | 含 `.png`/`.exe` 等非文本文件 | 检查文件前 4 字节魔数。是二进制 → 输出「检测到二进制文件，跳过：[路径]」，不修改 |
+| BOM 重复 | 多次转换后文件头出现多个 `EF BB BF` | 转换前先移除现有 BOM，再写入新 BOM |
+| 权限不足 | 文件只读或无写权限 | 输出「无法处理：[路径]（权限不足）」，跳过继续 |
+| 非 UTF-8 编码 | 文件为 GBK/Latin-1 等 | 输出「编码异常：[路径]（非 UTF-8，需手动处理）」，跳过 |
+| 误改第三方库 | `vendor/` 代码被转换产生 diff | 扫描阶段必须排除目录。若已误改，用 `git checkout -- vendor/` 回滚 |
+| Python 不可用 (Linux) | `python3` 命令不存在 | 输出「错误：未找到 python3，需 Python 3.6+」 |
+| PowerShell 不可用 (Win) | PowerShell 版本过低 | 输出「错误：需要 PowerShell 5.0+」 |
+| Git hook 拦截提交 | pre-commit 检查失败 | 先执行步骤 5 修复，`git add` 重新 stage，再提交 |
+
+---
+
+## 输出格式
+
+**检测模式**：
+```
+不合规：src/main.cpp (缺少 BOM, 含 CRLF)
+合规：src/utils.h
+...
+完成：扫描 N 个文件，M 个不合规
 ```
 
----
+**修复模式**：
+```
+已修复：src/main.cpp → UTF-8 with BOM + LF
+跳过：vendor/lib.cpp（第三方目录）
+...
+完成：共处理 N 个文件，修复 M 个，跳过 K 个
+```
 
-## 快速参考
-
-| 场景 | 检查方法 | 修复方法 |
-|------|----------|----------|
-| 检查 BOM | `head -c 3 file | xxd` 或 Hex 编辑器 | 写入 `EF BB BF` 前缀 |
-| 检测 CRLF | `file file.cpp` 或 `grep -rl $'\r'` | 替换为 LF |
-| 批量修复（Win） | 上方 PowerShell 脚本 | 同上脚本 |
-| 批量修复（Linux） | 上方 Python 脚本 | 同上脚本 |
-| Git 提交阻止 | `pre-commit` hook | 修复后重新 stage |
-| VS Code 查看 | 状态栏右下角的编码/换行符指示 | 点击切换或 `>Change End Of Line Sequence` |
+**批量任务结束**：必须输出统计：`完成：共处理 N 个文件`
 
 ---
 
-## 常见错误
+## 禁止行为
 
-| 错误 | 表现 | 修正 |
-|------|------|------|
-| BOM 重复 | 反复转换后文件头出现多个 BOM | 转换前应移除现有 BOM 再写入 |
-| 二进制损坏 | 对 `.png`/`.exe` 执行编码转换 | 按扩展名过滤 + 检测前 4 字节魔数 |
-| 只改换行符不改编码 | 换行符 LF 但编码是 GBK | 两步都要执行，先转编码再转换行符 |
-| 误改第三方库 | `vendor/` 代码被转换，产生大量 diff | 排除目录必须在脚本中硬编码 |
-| 提交时才发现 | CI 失败才发现编码不合规 | 配置 pre-commit hook 提前拦截 |
-
----
-
-## Verification（自我检查清单）
-
-- [ ] 文件头 3 字节为 `EF BB BF`
-- [ ] 无 `0D 0A`（CRLF），仅含 `0A`（LF）
-- [ ] 中文注释在 MSVC 编译无乱码
-- [ ] 批量转换后 diff 仅涉及目标文件（无误改）
-- [ ] 排除目录未受影响（build/vendor/node_modules）
-- [ ] pre-commit hook 生效：违规提交被阻止
-- [ ] 转换前后功能测试通过（编码变更不改变语义）
-
----
-
-## Output rules
-
-1. **成功转换**：输出 `已修复 [文件名]：UTF-8 with BOM + LF`
-2. **文件合规**：静默通过，不输出。
-3. **错误处理**：
-   - 无法访问 → `无法处理：[路径]（权限不足）`
-   - 二进制误触 → `检测到二进制文件，跳过：[路径]`
-   - 解码失败 → `编码异常：[路径]（非 UTF-8）`
-4. **统计结束**：批量任务完成后输出 `完成：共处理 N 个文件`
-
----
-
-## 备注
-
-- **BOM 争议**：尽管部分场景反对 BOM，在跨平台 C/C++ 编译与 MSVC 兼容性权衡下，此为必要折中。仅 C/C++ 场景强制 BOM；其他语言用不带 BOM 的 UTF-8。
-- **性能优化**：缓存文件哈希值，仅对修改过的文件执行检查，避免重复扫描。
-- **推荐集成**：pre-commit hook + CI lint 阶段双重保障。
+- × 对二进制文件执行编码转换
+- × 修改 `build/`、`vendor/`、`node_modules/`、`.git/` 下的文件
+- × 仅转换行符不转编码（或反之）— 必须两步都检查
+- × 非 C/C++ 项目强制 BOM（其他语言 UTF-8 无 BOM 即可）
+- × 转换后不验证结果就声称完成
