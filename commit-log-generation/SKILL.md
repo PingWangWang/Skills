@@ -1,4 +1,9 @@
-skill(commit_log): 生成标准化提交日志
+---
+name: commit-log-generation
+description: 生成标准化提交日志 — 基于 Conventional Commits 规范，支持 Git 和 SVN 仓库
+---
+
+# 生成标准化提交日志
 
 **Why:**
 规范化的提交日志让项目历史可读、可追溯、可自动化。一致的格式支持 changelog 自动生成、版本号语义推断、回归定位和跨团队协作。未经规范的提交信息（如 "fix bug"、"update"、"aaa"）在三个月后就是噪音。
@@ -75,13 +80,13 @@ skill(commit_log): 生成标准化提交日志
 
 ```
 # ✅ 好的描述
-feat(auth): add OAuth2 login flow
-fix(parser): handle empty input edge case
-docs: update API reference links
+feat(auth): 新增 OAuth2 登录流程
+fix(parser): 处理空输入边界情况
+docs: 更新 API 参考文档链接
 
 # ❌ 坏的描述
-feat: Added OAuth2 login flow      # 动词非原形
-fix: parsing error                  # 太模糊
+feat: 增加了 OAuth2 登录流程        # 避免使用"了"等多余字词，保持简洁
+fix: 解析错误                        # 太模糊
 update                              # 无类型无范围
 ```
 
@@ -93,7 +98,7 @@ update                              # 无类型无范围
 - 极简变更（一行改动、typo 修复）可省略。
 
 ```
-feat(cart): add bulk discount calculation
+feat(cart): 新增批量折扣计算功能
 
 现有满减逻辑只支持单商品优惠。促销系统 v2 要求
 跨品类凑单折扣，因此重构折扣引擎以支持规则链。
@@ -138,15 +143,15 @@ Closes: JIRA-4321
 
 | 场景 | Subject 示例 |
 |------|-------------|
-| 新功能 | `feat(user): add phone number verification` |
-| 修 Bug | `fix(api): return 400 on invalid email format` |
-| 文档 | `docs: fix typo in setup guide` |
-| 重构 | `refactor(db): extract query builder from repository` |
-| 性能 | `perf: lazy load user avatar images` |
-| 测试 | `test: add unit tests for rate limiter` |
-| 杂项 | `chore: upgrade Go to 1.22` |
-| 破坏性变更 | `feat!: change auth token format to JWT` |
-| 无代码（纯新文件） | `feat: add .editorconfig` |
+| 新功能 | `feat(user): 新增手机号验证功能` |
+| 修 Bug | `fix(api): 邮箱格式无效时返回 400` |
+| 文档 | `docs: 修正安装指南中的拼写错误` |
+| 重构 | `refactor(db): 从仓储层提取查询构造器` |
+| 性能 | `perf: 用户头像图片改为懒加载` |
+| 测试 | `test: 新增限流器单元测试` |
+| 杂项 | `chore: 升级 Go 至 1.22` |
+| 破坏性变更 | `feat!: 认证令牌格式改为 JWT` |
+| 无代码（纯新文件） | `feat: 添加 .editorconfig` |
 | 多个独立变更 | 拆分为多个 commit，不要写混合 commit |
 
 ---
@@ -155,10 +160,11 @@ Closes: JIRA-4321
 
 | 错误 | 表现 | 修正 |
 |------|------|------|
-| 模糊类型 | `update`、`fix` | 使用类型字典中的标准类型 |
-| 动词非原形 | `Added`、`Fixing` | 统一用动词原形：`add`、`fix` |
-| 混合类型 | `feat: add login and fix logout bug` | 拆为两个 commit |
-| 无 Why | `fix(api): change timeout` | 补充原因：`fix(api): reduce timeout to 5s to avoid upstream gateway timeout` |
+| 模糊类型 | `更新`、`修复` | 使用类型字典中的标准类型 |
+| 描述非中文 | `fix: bug fix`、`feat: add feature` | Subject 和 Body 必须用中文撰写 |
+| 动词多余字词 | `新增了`、`修复了` | 去掉"了"，保持简洁：`新增`、`修复` |
+| 混合类型 | `feat: 新增登录 同时修复登出 Bug` | 拆为两个 commit |
+| 无 Why | `fix(api): 修改超时时间` | 补充原因：`fix(api): 缩短超时至 5s 避免上游网关超时` |
 | Body 无换行 | 单行长文本 | 每行 ≤80 字符手动换行 |
 | 超级长 Subject | 超 50 字符 | 压缩或移入 Body |
 | 开场白 | 先解释再输出内容 | 直出日志内容，不加「以下是提交日志」 |
@@ -169,7 +175,7 @@ Closes: JIRA-4321
 ## Verification（自我检查清单）
 
 - [ ] 类型在字典中（feat/fix/docs/style/refactor/perf/test/chore）
-- [ ] Subject ≤50 字符，动词原形开头，无句号
+- [ ] Subject ≤50 字符，中文简洁描述，无句号
 - [ ] Body（如有）每行 ≤80 字符，说明 Why + How
 - [ ] Footer（如有）前有空行，编号正确
 - [ ] breaking change 有 `BREAKING CHANGE:` 或 `!` 标记
@@ -182,8 +188,9 @@ Closes: JIRA-4321
 ## 输出规则
 
 1. **只输出日志文本**，不输出前后说明、命令、提示。
-2. 首行：`类型(作用域): 动词原形开头的简短描述`（无句号）。
+2. 首行：`类型(作用域): 中文简短描述`（无句号，≤50 字符）。
 3. 各段之间空行分隔。
 4. 详细描述手动换行（每行 ≤80 字符）。
 5. 破坏性变更必须标注 `BREAKING CHANGE:` 或 `!`。
 6. **禁止**输出执行命令（`git commit -m "..."`）、开场白、结束语。
+7. **描述使用中文**：Subject（简短描述）和 Body（详细描述）必须使用中文撰写。类型和作用域保持英文小写（遵循 Conventional Commits 规范）。

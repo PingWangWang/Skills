@@ -1,4 +1,9 @@
-skill(file_encoding_standardization): 统一代码文件编码与换行符规范
+---
+name: file-encoding-standardization
+description: 统一代码文件编码与换行符规范 — UTF-8 with BOM + LF，确保跨平台兼容和 MSVC 编码识别
+---
+
+# 统一代码文件编码与换行符规范
 
 **Why:**
 确保所有源码文件使用 **UTF-8 with BOM** 编码和 **LF** 换行符，解决以下问题：
