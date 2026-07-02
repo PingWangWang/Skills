@@ -1,5 +1,5 @@
 ---
-name: code-comment-rule
+name: code-comment
 description: 代码注释规范。适用：写新函数/类、修改逻辑、代码审查、提交前检查。不适用：纯文档、配置文件、项目无关内容、批量格式化（无需标记）
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: commit
+name: code-commit
 description: Use when user requests commit message generation, formatted commit log, or standardized Git/SVN commit text. Requires VCS diff/staged changes. Not for: executing commits, non-repo directories, general commit standard discussion, SVN commit execution.
 ---
 
