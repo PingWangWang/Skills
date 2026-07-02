@@ -17,8 +17,8 @@ description: 问题修复模式 — 串联 code-analysis（分析）、code-comm
 
 **调用规则**：
 - `code-analysis` → 必须执行，不可跳过（除非用户已从 code-analysis 转来且带分析结果）
-- `code-comment` → 每次写入/修改代码文件时，同步检查注释合规性
-- `file-encoding` → 每次修改文件后，检测并修复编码和换行符
+- `code-comment` → 必须执行，不可跳过，每次写入/修改代码文件时，同步检查注释合规性
+- `file-encoding` → 必须执行，不可跳过，每次修改文件后，检测并修复编码和换行符
 
 ---
 
