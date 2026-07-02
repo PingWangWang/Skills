@@ -29,6 +29,7 @@
 
 | 技能 | 用途 | 触发场景 |
 |------|------|---------|
+| `code-refactor` | 识别代码坏味道（长方法、重复代码、大类等），给出重构方案 | 重构代码、优化结构、消除技术债务 |
 | `code-revirwer` | 中文代码审查，生成结构化审查报告 | 代码审查、code review、代码质量评估 |
 | `file-encoding` | 批量统一编码为 UTF-8 with BOM + LF，支持 GBK/Latin-1 自动转换 | MSVC 编译乱码、跨平台换行符混乱 |
 
@@ -51,7 +52,7 @@ code-writting（编排器：分析 → 修改 → 验证）
        └── 调用 file-encoding（每改一个文件检查编码）
        │
        ▼
-code-revirwer（代码审查，生成报告）
+code-revirwer（代码审查，生成报告）  ←→  code-refactor（识别坏味道，给出重构方案）
        │
        ▼
 code-commit（生成标准化提交信息）
@@ -62,6 +63,7 @@ code-commit（生成标准化提交信息）
 - **`code-analysis`** 和 **`code-writting`** 是分析/修复配对 — 先想清楚再动手
 - **`code-comment`** 和 **`file-encoding`** 是辅助技能，由 `code-writting` 在修改过程中自动调用
 - **`code-revirwer`** 审查改动质量，输出结构化报告
+- **`code-refactor`** 识别代码坏味道并提供重构方案，可与 `code-revirwer` 配合使用
 - **`code-commit`** 在所有修改完成后生成提交信息
 - **`readme-zh`** 独立运行，生成项目文档
 
@@ -85,6 +87,7 @@ Claude Code 启动时会自动加载该目录下的技能定义。
 帮我分析一下这个崩溃的原因          → 触发 code-analysis
 直接帮我修这个 Bug，不用确认        → 触发 code-writting
 审查一下这段代码                    → 触发 code-revirwer
+这段代码太长了，帮我重构一下        → 触发 code-refactor
 生成一条提交信息                    → 触发 code-commit
 这个文件编码有问题，帮我统一一下    → 触发 file-encoding
 帮我写一份项目 README               → 触发 readme-zh
@@ -101,6 +104,8 @@ skills/
 ├── code-comment/        # 代码注释规范
 │   └── SKILL.md
 ├── code-revirwer/       # 中文代码审查
+│   └── SKILL.md
+├── code-refactor/       # 重构顾问（坏味道检测）
 │   └── SKILL.md
 ├── code-commit/         # 标准化提交信息生成
 │   └── SKILL.md
@@ -120,7 +125,7 @@ skills/
 - **AI 辅助开发团队**：让 AI 生成的代码符合团队的注释、编码和提交规范
 - **C++/跨平台项目**：解决 MSVC 编码乱码、换行符不一致的工程问题
 - **企业 SVN + Git 混用环境**：跨版本控制系统统一提交格式
-- **开源项目维护者**：用 `code-revirwer` 审查 PR，用 `readme-zh` 生成专业文档
+- **开源项目维护者**：用 `code-revirwer` 审查 PR，用 `code-refactor` 治理代码坏味道，用 `readme-zh` 生成专业文档
 
 ## 🛠️ 自定义
 
