@@ -1,6 +1,6 @@
 ---
 name: build-verify-td
-description: Use when building Thermal Desktop projects (D16_ThermalDesktop) — compiling GcTdEntity and GcThermalDesktop, running UpdateSDK, fixing compilation errors. Trigger: user mentions TD building/building errors/GcTdEntity/GcThermalDesktop/build scripts
+description: "编译 Thermal Desktop 项目（D16_ThermalDesktop）时使用 — 编译 GcTdEntity 和 GcThermalDesktop、运行 UpdateSDK、修复编译错误。触发条件：用户提及 TD 编译/编译错误/GcTdEntity/GcThermalDesktop/编译脚本"
 ---
 
 # Build & Verify — Thermal Desktop 编译流程

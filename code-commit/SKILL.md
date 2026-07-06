@@ -1,6 +1,6 @@
 ---
 name: code-commit
-description: Use when user requests commit message generation, formatted commit log, or standardized Git/SVN commit text. Requires VCS diff/staged changes. Not for: executing commits, non-repo directories, general commit standard discussion, SVN commit execution.
+description: "用户要求生成提交信息、格式化提交日志或标准化 Git/SVN 提交文本时使用。需要 VCS diff/暂存变更。不适用：执行提交操作、非仓库目录、通用提交标准讨论、SVN 提交执行。"
 ---
 
 # 生成标准化 Commit 提交信息
