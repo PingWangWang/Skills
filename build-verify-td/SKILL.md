@@ -22,33 +22,32 @@ description: "编译 Thermal Desktop 项目（D16_ThermalDesktop）时使用 —
 
 ### 步骤 1：编译 GcTdEntity
 
-按顺序执行以下脚本（均带 `-NoWait` 参数）：
+按顺序执行以下脚本：
 
 ```powershell
-.\GcTdEntity\BuildDebug.ps1 -NoWait
-.\GcTdEntity\BuildRelease.ps1 -NoWait
+.\GcTdEntity\BuildDebug.ps1
+.\GcTdEntity\BuildRelease.ps1
 ```
 
 **说明**：
-- `-NoWait` 使脚本跳过结尾的「按任意键退出」等待，适合自动化执行
 - Debug 先于 Release，不可颠倒
 - 脚本内部自动执行 SVN update + 版本号更新 + MSBuild 编译
 
 ### 步骤 2：更新 GcThermalDesktop SDK
 
 ```powershell
-.\GcThermalDesktop\UpdateSDK.ps1 -NoWait
+.\GcThermalDesktop\UpdateSDK.ps1
 ```
 
 **说明**：将 `..\GcTdSDK` 的最新 SDK 拷贝到 `GcThermalDesktop\GcTdSDK`，确保 GcThermalDesktop 编译时使用最新的 SDK 头文件和库。
 
 ### 步骤 3：编译 GcThermalDesktop
 
-按顺序执行以下脚本（均带 `-NoWait` 参数）：
+按顺序执行以下脚本：
 
 ```powershell
-.\GcThermalDesktop\BuildDebug.ps1 -NoWait
-.\GcThermalDesktop\BuildRelease.ps1 -NoWait
+.\GcThermalDesktop\BuildDebug.ps1
+.\GcThermalDesktop\BuildRelease.ps1
 ```
 
 ### 步骤 4：检查编译结果
@@ -71,12 +70,10 @@ description: "编译 Thermal Desktop 项目（D16_ThermalDesktop）时使用 —
 
 | 要点 | 说明 |
 |------|------|
-| `-NoWait` | 所有脚本必须带此参数，否则脚本会等待按键阻塞执行 |
 | 执行顺序 | GcTdEntity → UpdateSDK → GcThermalDesktop，不可打乱 |
 | Debug → Release | 每个项目先 Debug 后 Release，不可颠倒 |
 | SVN 依赖 | 脚本依赖 SVN 工作副本信息获取版本号，确保在工作副本内执行 |
 | 编译日志 | 关注 MSBuild 输出的 error/warning，优先处理 error |
-| 重复编译 | 若修复后重新编译某脚本，同样需要带 `-NoWait` |
 
 ---
 
@@ -97,25 +94,24 @@ description: "编译 Thermal Desktop 项目（D16_ThermalDesktop）时使用 —
 
 ```powershell
 # 完整编译流程（项目根目录执行）
-.\GcTdEntity\BuildDebug.ps1 -NoWait
+.\GcTdEntity\BuildDebug.ps1
 if ($LASTEXITCODE -ne 0) { Write-Host "GcTdEntity Debug 编译失败" -ForegroundColor Red }
-.\GcTdEntity\BuildRelease.ps1 -NoWait
-.\GcThermalDesktop\UpdateSDK.ps1 -NoWait
-.\GcThermalDesktop\BuildDebug.ps1 -NoWait
-.\GcThermalDesktop\BuildRelease.ps1 -NoWait
+.\GcTdEntity\BuildRelease.ps1
+.\GcThermalDesktop\UpdateSDK.ps1
+.\GcThermalDesktop\BuildDebug.ps1
+.\GcThermalDesktop\BuildRelease.ps1
 ```
 
 ```powershell
 # 单独重编译某项（修复后验证）
-.\GcTdEntity\BuildDebug.ps1 -NoWait
-.\GcThermalDesktop\BuildRelease.ps1 -NoWait # 替换为需重编的脚本
+.\GcTdEntity\BuildDebug.ps1
+.\GcThermalDesktop\BuildRelease.ps1 # 替换为需重编的脚本
 ```
 
 ---
 
 ## 禁止行为
 
-- × 跳过 `-NoWait` 参数（会导致脚本挂起等待按键）
 - × 先 Release 后 Debug
 - × 先 GcThermalDesktop 后 GcTdEntity
 - × 跳过 UpdateSDK 直接编译 GcThermalDesktop
